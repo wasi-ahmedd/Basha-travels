@@ -104,5 +104,13 @@ export async function getCustomerDashboard(_data, userId) {
     driver: t.driver_id ? { name: t.driver_name } : null
   }));
 
-  return { activeTrip, tripHistory, locations };
+  const { rows: carTypesRow } = await query("SELECT * FROM car_types");
+  const carTypes = carTypesRow.map(c => ({
+    ...c,
+    ratePerKm: parseFloat(c.rate_per_km),
+    baseFare: parseFloat(c.base_fare),
+    minFare: parseFloat(c.min_fare)
+  }));
+
+  return { activeTrip, tripHistory, locations, carTypes };
 }

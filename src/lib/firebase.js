@@ -14,7 +14,11 @@ const firebaseConfig = {
 let auth = null;
 let googleProvider = null;
 
-if (firebaseConfig.apiKey) {
+const isConfigValid = firebaseConfig.apiKey && 
+                     firebaseConfig.apiKey !== "null" && 
+                     firebaseConfig.apiKey !== "undefined";
+
+if (isConfigValid) {
     try {
         const app = initializeApp(firebaseConfig);
         auth = getAuth(app);
@@ -24,7 +28,7 @@ if (firebaseConfig.apiKey) {
         console.error("Firebase initialization failed:", err);
     }
 } else {
-    console.warn("Firebase API key is missing. Google Sign-In will not be available.");
+    console.warn("Firebase configuration is missing or invalid. Google Sign-In will not be available.");
 }
 
 export { auth, googleProvider };

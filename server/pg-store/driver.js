@@ -11,12 +11,20 @@ export async function getDriverDashboard(_data, userId) {
   const driver = drivers[0];
   if (!driver) throw new Error("Driver profile not found.");
 
+  const { rows: earningsRow } = await query(`
+    SELECT COALESCE(SUM(driver_payout), 0) as today_earnings 
+    FROM trips 
+    WHERE driver_id = $1 AND status = 'completed' AND created_at >= CURRENT_DATE
+  `, [driver.id]);
+
   const profile = {
     name: driver.name,
     status: driver.status,
     rating: parseFloat(driver.rating),
     vehicleNumber: driver.vehicle_number,
-    carType: { name: driver.car_type_name }
+    carType: { name: driver.car_type_name },
+    earningsToday: parseFloat(earningsRow[0].today_earnings),
+    lifetimeEarnings: parseFloat(driver.lifetime_earnings)
   };
 
   let activeTrip = null;

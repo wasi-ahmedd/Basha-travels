@@ -5,14 +5,40 @@ import { hashPassword } from "./auth.js";
 
 export async function getAdminDashboard(_data) {
   const { rows: completedTrips } = await query("SELECT * FROM trips WHERE status = 'completed'");
-  const { rows: activeTrips } = await query("SELECT * FROM trips WHERE status IN ('assigned', 'in_progress')");
-  const { rows: freeDrivers } = await query("SELECT * FROM drivers WHERE status = 'free'");
+  const { rows: activeTripsRow } = await query(`
+    SELECT t.*, d.name as driver_name, c.name as car_type_name
+    FROM trips t
+    LEFT JOIN drivers d ON t.driver_id = d.id
+    LEFT JOIN car_types c ON t.car_type_id = c.id
+    WHERE t.status IN ('assigned', 'in_progress')
+  `);
   
+  const { rows: driversRow } = await query(`
+    SELECT d.*, c.name as car_type_name
+    FROM drivers d
+    LEFT JOIN car_types c ON d.car_type_id = c.id
+  `);
+  
+  const { rows: carTypesRow } = await query("SELECT * FROM car_types");
+  const carTypes = carTypesRow.map(c => ({
+    ...c,
+    ratePerKm: parseFloat(c.rate_per_km),
+    baseFare: parseFloat(c.base_fare),
+    minFare: parseFloat(c.min_fare)
+  }));
+
+  const { rows: recentTripsRow } = await query(`
+    SELECT t.*, d.name as driver_name, cu.display_name as customer_name
+    FROM trips t
+    LEFT JOIN drivers d ON t.driver_id = d.id
+    LEFT JOIN users cu ON t.customer_user_id = cu.id
+    ORDER BY t.created_at DESC LIMIT 20
+  `);
+
   const grossRevenue = completedTrips.reduce((sum, t) => sum + parseFloat(t.fare), 0);
   const driverPayouts = completedTrips.reduce((sum, t) => sum + parseFloat(t.driver_payout), 0);
   const platformEarnings = grossRevenue - driverPayouts;
 
-  const { rows: carTypes } = await query("SELECT * FROM car_types");
   const revenueByCarType = carTypes.map(c => {
     const total = completedTrips
       .filter(t => t.car_type_id === c.id)
@@ -21,13 +47,35 @@ export async function getAdminDashboard(_data) {
   });
 
   return {
-    grossRevenue,
-    driverPayouts,
-    platformEarnings,
-    activeTrips: activeTrips.length,
-    freeDrivers: freeDrivers.length,
-    totalTrips: completedTrips.length + activeTrips.length,
-    revenueByCarType
+    metrics: {
+      grossRevenue,
+      driverPayouts,
+      platformEarnings,
+      activeTrips: activeTripsRow.length,
+      freeDrivers: driversRow.filter(d => d.status === 'free').length,
+      totalTrips: completedTrips.length + activeTripsRow.length,
+      revenueByCarType
+    },
+    activeTrips: activeTripsRow.map(t => ({
+      ...t,
+      fare: parseFloat(t.fare),
+      driver: t.driver_id ? { name: t.driver_name } : null,
+      carType: { name: t.car_type_name }
+    })),
+    freeDrivers: driversRow.filter(d => d.status === 'free'),
+    drivers: driversRow.map(d => ({
+      ...d,
+      rating: parseFloat(d.rating),
+      lifetimeEarnings: parseFloat(d.lifetime_earnings),
+      carType: { name: d.car_type_name }
+    })),
+    recentTrips: recentTripsRow.map(t => ({
+      ...t,
+      fare: parseFloat(t.fare),
+      driver: t.driver_id ? { name: t.driver_name } : null,
+      customer: { name: t.customer_name }
+    })),
+    carTypes
   };
 }
 
