@@ -10,7 +10,8 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
-// Initialize Firebase only if config is valid
+console.log("Firebase Config API Key:", firebaseConfig.apiKey ? "SET" : "NOT SET");
+
 let auth = null;
 let googleProvider = null;
 
@@ -20,8 +21,10 @@ const isConfigValid = firebaseConfig.apiKey &&
 
 if (isConfigValid) {
     try {
+        console.log("Initializing Firebase app...");
         const app = initializeApp(firebaseConfig);
         auth = getAuth(app);
+        console.log("Firebase Auth initialized successfully.");
         googleProvider = new GoogleAuthProvider();
         googleProvider.setCustomParameters({ prompt: 'select_account' });
     } catch (err) {

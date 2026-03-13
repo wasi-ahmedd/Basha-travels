@@ -27,6 +27,10 @@ export default function LoginPage() {
     }
 
     async function handleGoogleLogin() {
+        if (!auth) {
+            setError("Google Sign-In is not available because Firebase is not configured correctly. Please check your environment variables.");
+            return;
+        }
         setLoading(true);
         setError("");
         try {
