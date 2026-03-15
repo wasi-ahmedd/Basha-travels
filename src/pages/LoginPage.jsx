@@ -8,7 +8,7 @@ import { signInWithPopup, GoogleAuthProvider as FirebaseGoogleAuthProvider } fro
 import { APP_CONFIG } from "../config";
 
 const ICONS = { customer: "🧍", driver: "🚗", admin: "⚙️" };
-const ROLES = ["customer", "driver", "admin"];
+const ROLES = ["customer", "admin"]; // "driver" hidden for demo
 
 export default function LoginPage() {
     const navigate = useNavigate();
