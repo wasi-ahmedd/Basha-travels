@@ -53,6 +53,7 @@ export async function createOrFindGoogleUser(_data, googlePayload) {
 }
 
 export function verifyPassword(password, passwordHash) {
+  if (!passwordHash || !password) return false;
   return hashPassword(password) === passwordHash;
 }
 

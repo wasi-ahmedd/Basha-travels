@@ -18,6 +18,13 @@ export async function initDb() {
   const schemaSql = fs.readFileSync(schemaPath, "utf-8");
   await query(schemaSql);
 
+  // Migration: ensure password_hash is nullable (for Google auth users)
+  try {
+    await query("ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL");
+  } catch (e) {
+    // Ignore if already nullable
+  }
+
   // 2. Check if already seeded
   const { rows } = await query("SELECT COUNT(*) FROM users");
   if (parseInt(rows[0].count, 10) > 0) {

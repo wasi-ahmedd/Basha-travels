@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS users (
   username VARCHAR(50) UNIQUE,
   email VARCHAR(100) UNIQUE,
   phone VARCHAR(20),
-  password_hash TEXT NOT NULL,
+  password_hash TEXT,
   display_name VARCHAR(100)
 );
 
