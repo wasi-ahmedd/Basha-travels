@@ -9,7 +9,7 @@ import {
   findUserFromTokenPayload, getAdminDashboard, getCustomerDashboard, getDriverDashboard, getPublicBootstrap,
   getSessionPayload, quoteTrip, setDriverAvailability, startDriverTrip, verifyPassword,
   addCarType, addDriver, acceptTrip, rejectTrip, getCustomerAvailability,
-  verifyGoogleToken, createOrFindGoogleUser
+  verifyGoogleToken, createOrFindGoogleUser, demoAdvanceTrip, demoCompleteTrip
 } from "./store.js"; 
 
 const app = express();
@@ -134,9 +134,15 @@ app.post("/api/customer/trips", requireAuth("customer"), async (req, res, next) 
   try { res.json(await createTrip(null, req.authUser.id, req.body)); } catch (err) { next(err); }
 });
 
+app.post("/api/customer/trips/:tripId/demo-advance", requireAuth("customer"), async (req, res, next) => {
+  try {
+    res.json(await demoAdvanceTrip(null, req.authUser.id, req.params.tripId));
+  } catch (err) { next(err); }
+});
+
 app.post("/api/customer/trips/:tripId/complete", requireAuth("customer"), async (req, res, next) => {
   try {
-     res.json(await completeDriverTrip(null, req.authUser.id, req.params.tripId));
+     res.json(await demoCompleteTrip(null, req.authUser.id, req.params.tripId));
   } catch (err) { next(err); }
 });
 

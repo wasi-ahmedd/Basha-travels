@@ -152,14 +152,26 @@ function BookingFlow({ locations, carTypes, token, onBooked, toast }) {
                 body: bodyPayload
             });
             
-            // Demo visual effect: show the radar pulse for 2.5s before showing the driver
-            const fakePendingTrip = { ...trip, status: "pending_acceptance" };
+            // Stage 1: Show "Finding your ride..." radar animation
+            const fakePendingTrip = { ...trip, status: "pending_acceptance", carTypeId: carTypeId };
             onBooked(fakePendingTrip, true);
             
-            await new Promise(res => setTimeout(res, 2500));
+            // Wait 3s for the searching animation
+            await new Promise(res => setTimeout(res, 3000));
             
-            toast("Driver has arrived! 🚗", "success");
-            onBooked(trip, false);
+            // Stage 2: Auto-advance — assign driver & move to in_progress
+            try {
+                const advanced = await apiFetch(`/api/customer/trips/${trip.id}/demo-advance`, {
+                    method: "POST", token
+                });
+                toast("Driver found! 🎉", "success");
+                onBooked({ ...advanced, carTypeId: advanced.carTypeId || carTypeId }, false);
+            } catch {
+                // If advance fails, just refresh to get latest state
+                toast("Driver assigned! 🚗", "success");
+                onBooked(trip, false);
+            }
+            
             setStep("location");
             setQuote(null);
             setCarTypeId("");
@@ -399,8 +411,34 @@ function ActiveTrip({ trip, locations, token, onRefresh, toast }) {
                     <DummyMap locations={locations} pickup={pickupLoc} dropoff={dropoffLoc}
                         routePoints={trip.routePoints} driverPos={driverPos} />
 
-                    {/* Driver info */}
-                    {trip.driver && (
+                    {/* Driver Found Banner */}
+                    {trip.driver && (trip.status === "in_progress" || trip.status === "assigned") && (
+                        <div style={{
+                            marginTop: 14, borderRadius: 14, overflow: "hidden",
+                            background: "linear-gradient(135deg, rgba(34,211,122,0.12) 0%, rgba(124,111,255,0.08) 100%)",
+                            border: "1px solid rgba(34,211,122,0.25)"
+                        }}>
+                            <div style={{ padding: "12px 16px", display: "flex", alignItems: "center", gap: 4, background: "rgba(34,211,122,0.1)", borderBottom: "1px solid rgba(34,211,122,0.15)" }}>
+                                <span style={{ fontSize: 16 }}>✅</span>
+                                <span style={{ fontSize: 14, fontWeight: 800, color: "var(--green)" }}>Driver Found!</span>
+                            </div>
+                            <div style={{ padding: "14px 16px", display: "flex", alignItems: "center", gap: 12 }}>
+                                <div className="avatar" style={{ background: "var(--accent)", color: "#fff", width: 44, height: 44, fontSize: 18 }}>
+                                    {trip.driver.name.charAt(0)}
+                                </div>
+                                <div style={{ flex: 1 }}>
+                                    <div style={{ fontWeight: 700, fontSize: 15 }}>{trip.driver.name}</div>
+                                    <div style={{ fontSize: 12, color: "var(--text2)" }}>{trip.driver.vehicleNumber}</div>
+                                </div>
+                                <div style={{ display: "flex", alignItems: "center", gap: 4, color: "var(--yellow)", fontSize: 14, fontWeight: 700 }}>
+                                    ⭐ {trip.driver.rating}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Driver info fallback for other states */}
+                    {trip.driver && trip.status !== "in_progress" && trip.status !== "assigned" && trip.status !== "completed" && (
                         <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 14, background: "rgba(0,0,0,0.3)", borderRadius: 12, padding: "12px 14px" }}>
                             <div className="avatar" style={{ background: "var(--accent)", color: "#fff" }}>
                                 {trip.driver.name.charAt(0)}
@@ -417,12 +455,6 @@ function ActiveTrip({ trip, locations, token, onRefresh, toast }) {
                 </>
             )}
 
-            {trip.status === "assigned" && (
-                <div className="eta-badge" style={{ marginTop: 12 }}>
-                    ⏱ Driver arriving in ~{trip.etaMin} min
-                </div>
-            )}
-
             {trip.status === "completed" && (
                 <div style={{ marginTop: 16, padding: "16px", background: "var(--bg3)", borderRadius: 12, textAlign: "center" }}>
                     <div style={{ fontSize: 32, marginBottom: 8 }}>🎉</div>
@@ -431,16 +463,22 @@ function ActiveTrip({ trip, locations, token, onRefresh, toast }) {
                 </div>
             )}
 
-            {trip.status === "in_progress" && (
+            {(trip.status === "in_progress" || trip.status === "assigned") && (
                 <button
-                    className="btn"
-                    style={{ marginTop: 14, width: "100%", background: "rgba(255, 90, 90, 0.15)", color: "var(--red)", border: "1px dashed var(--red)" }}
+                    className="btn btn-primary btn-block btn-lg"
+                    style={{
+                        marginTop: 16, width: "100%",
+                        background: "linear-gradient(135deg, var(--green) 0%, #1aaf5d 100%)",
+                        color: "#fff", fontWeight: 800, fontSize: 15,
+                        border: "none", borderRadius: 12, padding: "14px 20px",
+                        boxShadow: "0 4px 16px rgba(34,211,122,0.3)",
+                        transition: "all 0.2s ease"
+                    }}
                     onClick={async () => {
-                        if (!window.confirm("Simulate completing the ride?")) return;
                         setLoading(true);
                         try {
                             await apiFetch(`/api/customer/trips/${trip.id}/complete`, { method: "POST", token });
-                            toast("Ride Completed! (DEMO)", "success");
+                            toast("Ride Completed! 🎉", "success");
                             onRefresh();
                         } catch (e) {
                             toast(e.message, "error");
@@ -450,7 +488,7 @@ function ActiveTrip({ trip, locations, token, onRefresh, toast }) {
                     }}
                     disabled={loading}
                 >
-                    {loading ? <span className="spinner"/> : "(DEMO) Complete Ride Now"}
+                    {loading ? <span className="spinner"/> : "✓ Complete Ride (Demo)"}
                 </button>
             )}
 

@@ -114,3 +114,76 @@ export async function getCustomerDashboard(_data, userId) {
 
   return { activeTrip, tripHistory, locations, carTypes };
 }
+
+// Demo-only: auto-assign a driver and advance trip to in_progress
+export async function demoAdvanceTrip(_data, userId, tripId) {
+  const { rows: trips } = await query("SELECT * FROM trips WHERE id = $1 AND customer_user_id = $2", [tripId, userId]);
+  const trip = trips[0];
+  if (!trip) throw new Error("Trip not found.");
+  if (trip.status !== 'pending_acceptance') throw new Error("Trip is already advanced.");
+
+  // Find any driver (prefer free, but fallback to any)
+  let { rows: drivers } = await query("SELECT * FROM drivers WHERE status = 'free' LIMIT 1");
+  if (!drivers.length) {
+    ({ rows: drivers } = await query("SELECT * FROM drivers LIMIT 1"));
+  }
+  if (!drivers.length) throw new Error("No drivers in system.");
+
+  const driver = drivers[0];
+  const now = new Date().toISOString();
+
+  // Assign driver and advance to in_progress in one go
+  await query(
+    "UPDATE trips SET status = 'in_progress', assigned_at = $1, started_at = $1, driver_id = $2 WHERE id = $3",
+    [now, driver.id, tripId]
+  );
+  await query(
+    "UPDATE drivers SET status = 'on_trip', current_trip_id = $1 WHERE id = $2",
+    [tripId, driver.id]
+  );
+
+  // Return the updated trip with driver info
+  const { rows } = await query(`
+    SELECT t.*, d.name as driver_name, d.rating as driver_rating, d.vehicle_number, d.location_id as driver_location_id
+    FROM trips t
+    LEFT JOIN drivers d ON t.driver_id = d.id
+    WHERE t.id = $1
+  `, [tripId]);
+  
+  const t = rows[0];
+  return {
+    id: t.id,
+    status: t.status,
+    fare: parseFloat(t.fare),
+    distanceKm: parseFloat(t.distance_km),
+    durationMin: t.duration_min,
+    pickupId: t.pickup_id,
+    dropoffId: t.dropoff_id,
+    carTypeId: t.car_type_id,
+    driver: {
+      name: t.driver_name,
+      rating: parseFloat(t.driver_rating),
+      vehicleNumber: t.vehicle_number
+    }
+  };
+}
+
+// Demo-only: let customer complete their own trip
+export async function demoCompleteTrip(_data, customerUserId, tripId) {
+  const { rows: trips } = await query("SELECT * FROM trips WHERE id = $1 AND customer_user_id = $2", [tripId, customerUserId]);
+  const trip = trips[0];
+  if (!trip) throw new Error("Trip not found.");
+  if (trip.status === 'completed') throw new Error("Trip already completed.");
+
+  const now = new Date().toISOString();
+  await query("UPDATE trips SET status = 'completed', completed_at = $1 WHERE id = $2", [now, tripId]);
+
+  // Free the driver if one was assigned
+  if (trip.driver_id) {
+    const payout = parseFloat(trip.driver_payout);
+    await query("UPDATE drivers SET status = 'free', current_trip_id = NULL, lifetime_earnings = lifetime_earnings + $1 WHERE id = $2", [payout, trip.driver_id]);
+  }
+
+  const { rows } = await query("SELECT * FROM trips WHERE id = $1", [tripId]);
+  return rows[0];
+}
