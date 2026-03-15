@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { apiFetch } from "../lib/api";
 import { useAuth, useToast } from "../App";
 import { auth, googleProvider } from "../lib/firebase";
-import { signInWithPopup } from "firebase/auth";
+import { signInWithPopup, GoogleAuthProvider as FirebaseGoogleAuthProvider } from "firebase/auth";
 
 import { APP_CONFIG } from "../config";
 
@@ -35,11 +35,17 @@ export default function LoginPage() {
         setError("");
         try {
             const result = await signInWithPopup(auth, googleProvider);
-            const userToken = await result.user.getIdToken();
+            // Get the Google OAuth credential (not the Firebase token!)
+            const credential = FirebaseGoogleAuthProvider.credentialFromResult(result);
+            const googleIdToken = credential?.idToken;
+            
+            if (!googleIdToken) {
+                throw new Error("Could not get Google credential. Please try again.");
+            }
             
             const { token, user } = await apiFetch("/api/auth/google", {
                 method: "POST",
-                body: { idToken: userToken }
+                body: { idToken: googleIdToken }
             });
 
             login(token, user);
