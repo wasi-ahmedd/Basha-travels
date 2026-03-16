@@ -6,6 +6,7 @@ import DriverPage from "./pages/DriverPage";
 import AdminPage from "./pages/AdminPage";
 import { APP_CONFIG } from "./config";
 import { apiFetch } from "./lib/api";
+import { ThemeProvider, useTheme } from "./lib/ThemeContext";
 
 // ─── Auth Context ─────────────────────────────────────────────────────────────
 const AuthCtx = createContext(null);
@@ -244,29 +245,62 @@ function DemoRoleSwitcher() {
   );
 }
 
+// ─── Theme Switcher ──────────────────────────────────────────────────────────
+function ThemeSwitcher() {
+  const { theme, toggleTheme } = useTheme();
+  
+  const icons = {
+    light: "☀️",
+    dark: "🌙",
+    system: "🖥️"
+  };
+
+  return (
+    <button 
+      onClick={toggleTheme}
+      className="btn-ghost"
+      title={`Current theme: ${theme}. Click to change.`}
+      style={{
+        width: 40, height: 40, borderRadius: 12,
+        padding: 0, fontSize: 20, 
+        display: "flex", alignItems: "center", justifyContent: "center",
+        position: "fixed", top: 12, right: 12, zIndex: 1000,
+        background: "var(--bg2)",
+        border: "1px solid var(--border2)",
+        boxShadow: "var(--shadow)"
+      }}
+    >
+      {icons[theme]}
+    </button>
+  );
+}
+
 // ─── App ──────────────────────────────────────────────────────────────────────
 export default function App() {
   return (
-    <AuthProvider>
-      <ToastProvider>
-        <DemoBootstrap>
-          <Routes>
-            <Route path="/" element={<RootRedirect />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/customer" element={
-              <Protected role="customer"><CustomerPage /></Protected>
-            } />
-            <Route path="/driver" element={
-              <Protected role="driver"><DriverPage /></Protected>
-            } />
-            <Route path="/admin" element={
-              <Protected role="admin"><AdminPage /></Protected>
-            } />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </DemoBootstrap>
-        <DemoRoleSwitcher />
-      </ToastProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <ToastProvider>
+          <DemoBootstrap>
+            <Routes>
+              <Route path="/" element={<RootRedirect />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/customer" element={
+                <Protected role="customer"><CustomerPage /></Protected>
+              } />
+              <Route path="/driver" element={
+                <Protected role="driver"><DriverPage /></Protected>
+              } />
+              <Route path="/admin" element={
+                <Protected role="admin"><AdminPage /></Protected>
+              } />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </DemoBootstrap>
+          <DemoRoleSwitcher />
+          <ThemeSwitcher />
+        </ToastProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
