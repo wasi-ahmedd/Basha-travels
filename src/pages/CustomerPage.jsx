@@ -626,15 +626,16 @@ export default function CustomerPage() {
                         {/* Premium Hero Section */}
                         <div className="hero-section" style={{
                             position: "relative",
-                            background: "linear-gradient(135deg, rgba(124,111,255,0.15) 0%, rgba(34,211,122,0.05) 100%)",
+                            background: "linear-gradient(135deg, #1f1f2e 0%, #141420 100%)", // Force a dark premium background
                             borderRadius: 20,
                             padding: "32px 24px",
                             overflow: "hidden",
-                            border: "1px solid rgba(255,255,255,0.05)"
+                            border: "1px solid rgba(255,255,255,0.1)",
+                            color: "#ffffff" // Ensure text is always white against the forced dark background
                         }}>
                             {/* Decorative background glows */}
-                            <div style={{ position: "absolute", top: -40, right: -40, width: 120, height: 120, background: "var(--accent)", filter: "blur(60px)", opacity: 0.3, borderRadius: "50%" }} />
-                            <div style={{ position: "absolute", bottom: -20, left: -20, width: 100, height: 100, background: "var(--green)", filter: "blur(50px)", opacity: 0.2, borderRadius: "50%" }} />
+                            <div style={{ position: "absolute", top: -40, right: -40, width: 120, height: 120, background: "var(--accent)", filter: "blur(60px)", opacity: 0.4, borderRadius: "50%" }} />
+                            <div style={{ position: "absolute", bottom: -20, left: -20, width: 100, height: 100, background: "var(--green)", filter: "blur(50px)", opacity: 0.3, borderRadius: "50%" }} />
                             
                             <div style={{ position: "relative", zIndex: 1 }}>
                                 <div style={{ fontSize: 13, fontWeight: 700, color: "var(--accent)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>
@@ -643,7 +644,7 @@ export default function CustomerPage() {
                                 <h2 style={{ fontSize: 28, fontWeight: 800, lineHeight: 1.2, marginBottom: 12, color: "#fff" }}>
                                     {APP_CONFIG.tagline}
                                 </h2>
-                                <p style={{ fontSize: 14, color: "var(--text2)", lineHeight: 1.5, maxWidth: "90%" }}>
+                                <p style={{ fontSize: 14, color: "rgba(255,255,255,0.7)", lineHeight: 1.5, maxWidth: "90%" }}>
                                     Book a comfortable ride in seconds. Enter your destination below to get started. 🚀
                                 </p>
                             </div>

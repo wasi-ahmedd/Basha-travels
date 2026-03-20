@@ -9,7 +9,7 @@ export const APP_CONFIG = {
 
   // Brand Name
   appName: "Basha Travels",
-  
+
   // Tagline
   tagline: "Reliable Car Rental & Taxi Service in Raichur",
 
@@ -19,7 +19,7 @@ export const APP_CONFIG = {
   phoneTertiary: "+91 8861314658",
   email: "bashatravels98@gmail.com",
   address: "Officers colony, Ashapur Road, Raichur - 584101",
-  
+
   // Admin credentials (for display on login page only)
   demoAdminUser: "admin",
   demoAdminPass: "admin"
