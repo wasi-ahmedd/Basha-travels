@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+/* Inter font — using system font fallback for offline mode */
 
 :root {
   /* Default Light Theme */

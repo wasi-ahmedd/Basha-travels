@@ -20,7 +20,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 public class MainActivity extends AppCompatActivity {
 
-    private static final String APP_URL = "https://basha-travels-production.up.railway.app";
+    private static final String APP_URL = "file:///android_asset/www/index.html";
     private WebView webView;
     private ProgressBar progressBar;
     private FrameLayout splashOverlay;
@@ -50,6 +50,8 @@ public class MainActivity extends AppCompatActivity {
         settings.setCacheMode(WebSettings.LOAD_DEFAULT);
         settings.setDatabaseEnabled(true);
         settings.setAllowFileAccess(true);
+        settings.setAllowFileAccessFromFileURLs(true);
+        settings.setAllowUniversalAccessFromFileURLs(true);
         settings.setLoadWithOverviewMode(true);
         settings.setUseWideViewPort(true);
         settings.setSupportZoom(false);
@@ -93,8 +95,8 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 String url = request.getUrl().toString();
-                // Keep navigation within the app for our domain
-                if (url.startsWith(APP_URL) || url.contains("railway.app")) {
+                // Keep navigation within the app for local files
+                if (url.startsWith("file:///")) {
                     return false;
                 }
                 // Open external links in browser
