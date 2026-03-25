@@ -34,7 +34,7 @@ public class MainActivity extends AppCompatActivity {
         getWindow().setStatusBarColor(Color.parseColor("#0d0d1a"));
         getWindow().setNavigationBarColor(Color.parseColor("#0d0d1a"));
         getWindow().getDecorView().setSystemUiVisibility(
-            View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+            View.SYSTEM_UI_FLAG_LAYOUT_STABLE
         );
 
         setContentView(R.layout.activity_main);
