@@ -25,7 +25,7 @@ let carTypes = [
 // ── Drivers (from server/data/store.json) ────────────────────────────────────
 let drivers = [
   { id: "driver-1", userId: "user-driver-1", name: "Ramesh Kumar", username: "driver1", status: "free", carTypeId: "mini", vehicleNumber: "MH 01 AB 1234 • Maruti Swift", rating: 4.88, locationId: "kempegowda-airport", lifetimeEarnings: 12840, currentTripId: null, contact: "+91 98765 43210" },
-  { id: "driver-2", userId: "user-driver-2", name: "Suresh Yadav", username: "driver2", status: "on_trip", carTypeId: "sedan", vehicleNumber: "DL 02 CD 5678 • Maruti Dzire", rating: 4.95, locationId: "majestic-east", lifetimeEarnings: 15560, currentTripId: "trip-live-1", contact: "+91 98765 43211" },
+  { id: "driver-2", userId: "user-driver-2", name: "Suresh Yadav", username: "driver2", status: "free", carTypeId: "sedan", vehicleNumber: "DL 02 CD 5678 • Maruti Dzire", rating: 4.95, locationId: "majestic-east", lifetimeEarnings: 15560, currentTripId: null, contact: "+91 98765 43211" },
   { id: "driver-3", userId: "user-driver-3", name: "Abdul Khan", username: "driver3", status: "free", carTypeId: "suv", vehicleNumber: "KA 03 EF 9012 • Toyota Innova", rating: 4.92, locationId: "hubli", lifetimeEarnings: 17620, currentTripId: null, contact: "+91 98765 43212" },
   { id: "driver-4", userId: "user-driver-4", name: "Balraj Singh", username: "driver4", status: "free", carTypeId: "executive", vehicleNumber: "PB 04 GH 3456 • Skoda Superb", rating: 4.97, locationId: "sdm-college", lifetimeEarnings: 20840, currentTripId: null, contact: "+91 98765 43213" },
   { id: "driver-5", userId: "user-driver-5", name: "Amit Sharma", username: "driver5", status: "free", carTypeId: "mini", vehicleNumber: "UP 14 XY 7788 • Hyundai i10", rating: 4.75, locationId: "belgaum-fort", lifetimeEarnings: 9400, currentTripId: null, contact: "+91 98765 43214" },
@@ -42,11 +42,12 @@ let drivers = [
 let trips = [
   {
     id: "trip-live-1", customerUserId: "user-customer-demo", driverId: "driver-2", carTypeId: "sedan",
-    pickupId: "kempegowda-airport", dropoffId: "majestic-east", status: "in_progress",
+    pickupId: "kempegowda-airport", dropoffId: "majestic-east", status: "completed",
     createdAt: new Date(Date.now() - 3600000).toISOString(),
     assignedAt: new Date(Date.now() - 3400000).toISOString(),
     startedAt: new Date(Date.now() - 3000000).toISOString(),
-    completedAt: null, distanceKm: 31.3, durationMin: 119, fare: 814, driverPayout: 602, platformRevenue: 212
+    completedAt: new Date(Date.now() - 1800000).toISOString(),
+    distanceKm: 31.3, durationMin: 119, fare: 814, driverPayout: 602, platformRevenue: 212
   },
   {
     id: "trip-complete-1", customerUserId: "user-customer-demo", driverId: "driver-3", carTypeId: "suv",
@@ -272,14 +273,23 @@ const handlers = {
     const completedTrips = allTrips.filter(t => t.status === "completed");
     const freeDriversList = drivers.filter(d => d.status === "free");
 
-    const grossRevenue = completedTrips.reduce((sum, t) => sum + t.fare, 0);
-    const driverPayouts = completedTrips.reduce((sum, t) => sum + t.driverPayout, 0);
+    // Base historical revenue (impressive demo numbers in lakhs)
+    const baseGrossRevenue = 847000;
+    const baseDriverPayouts = 627000;
+    const baseTotalTrips = 1284;
+
+    const grossRevenue = baseGrossRevenue + completedTrips.reduce((sum, t) => sum + t.fare, 0);
+    const driverPayouts = baseDriverPayouts + completedTrips.reduce((sum, t) => sum + t.driverPayout, 0);
     const platformEarnings = grossRevenue - driverPayouts;
 
-    const revenueByCarType = carTypes.map(ct => ({
-      id: ct.id, name: ct.name,
-      total: completedTrips.filter(t => t.carTypeId === ct.id).reduce((s, t) => s + t.fare, 0)
-    }));
+    const revenueByCarType = carTypes.map(ct => {
+      // Base revenue spread across car types
+      const baseRevenues = { mini: 185000, sedan: 276000, suv: 248000, executive: 138000 };
+      return {
+        id: ct.id, name: ct.name,
+        total: (baseRevenues[ct.id] || 50000) + completedTrips.filter(t => t.carTypeId === ct.id).reduce((s, t) => s + t.fare, 0)
+      };
+    });
 
     const enrichedDrivers = drivers.map(d => ({
       ...d,
@@ -301,7 +311,7 @@ const handlers = {
         grossRevenue, platformEarnings, driverPayouts,
         activeTrips: activeTrips.length,
         freeDrivers: freeDriversList.length,
-        totalTrips: allTrips.length,
+        totalTrips: baseTotalTrips + allTrips.length,
         revenueByCarType
       },
       activeTrips: activeTrips.map(t => ({
